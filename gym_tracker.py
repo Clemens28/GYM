@@ -1,16 +1,46 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
+import os
+
+# File path to store the exercise log
+EXERCISE_LOG_PATH = 'exercise_log.csv'
+EXERCISE_OPTIONS_PATH = 'exercise_options.txt'
+
+# Function to load exercise data from CSV file
+def load_data():
+    if os.path.exists(EXERCISE_LOG_PATH):
+        return pd.read_csv(EXERCISE_LOG_PATH)
+    else:
+        return pd.DataFrame(columns=["Exercise", "Date", "Reps", "Weight", "Set Number"])
+
+# Function to save exercise data to CSV file
+def save_data(df):
+    df.to_csv(EXERCISE_LOG_PATH, index=False)
+
+# Function to load exercise options from file
+def load_exercise_options():
+    if os.path.exists(EXERCISE_OPTIONS_PATH):
+        with open(EXERCISE_OPTIONS_PATH, 'r') as file:
+            return file.read().splitlines()
+    else:
+        return [
+            "Bench Press", "Incline Press Machine", "Bird Machine", "Triceps Cable heavy", "Triceps Machine",
+            "Shoulder Press Machine", "Lat Raise Machine", "Scholze Glas auskippen", "Shrug Machine",
+            "Deadlift", "Cable Row Machine", "T Bar", "SZ Curls", "Biceps Machine"
+        ]
+
+# Function to save exercise options to file
+def save_exercise_options(options):
+    with open(EXERCISE_OPTIONS_PATH, 'w') as file:
+        for option in options:
+            file.write(f"{option}\n")
 
 # Initialize session state
 if 'exercise_data' not in st.session_state:
-    st.session_state['exercise_data'] = pd.DataFrame(columns=["Exercise", "Muscle", "Date", "Reps", "Weight"])
+    st.session_state['exercise_data'] = load_data()
 if 'exercise_options' not in st.session_state:
-    st.session_state['exercise_options'] = [
-        "Bench Press", "Incline Press Machine", "Bird Machine", "Triceps Cable heavy", "Triceps Machine",
-        "Shoulder Press Machine", "Lat Raise Machine", "Scholze Glas auskippen", "Shrug Machine",
-        "Deadlift", "Cable Row Machine", "T Bar", "SZ Curls", "Biceps Machine"
-    ]
+    st.session_state['exercise_options'] = load_exercise_options()
 
 # Title
 st.title("Gym Exercise Tracker")
@@ -20,6 +50,7 @@ def add_new_exercise(new_exercise):
     if new_exercise:
         if new_exercise not in st.session_state['exercise_options']:
             st.session_state['exercise_options'].append(new_exercise)
+            save_exercise_options(st.session_state['exercise_options'])  # Save options
             st.success(f"Exercise '{new_exercise}' added successfully!")
         else:
             st.warning(f"Exercise '{new_exercise}' already exists.")
@@ -39,20 +70,22 @@ with st.form(key='exercise_form'):
     exercise = st.selectbox("Exercise", st.session_state['exercise_options'])
     date = st.date_input("Date")
     reps = st.number_input("Reps", min_value=1)
-    weight = st.number_input("Weight", min_value=0.0, step=0.1)
+    weight = st.number_input("Weight", min_value=0, step=1)
+    set_number = st.number_input("Set Number", min_value=1)
     submit_button = st.form_submit_button(label='Add Exercise')
 
 # Handle form submission
 if submit_button:
-    if exercise and date and reps and weight:
+    if exercise and date and reps and weight and set_number:
         new_data = pd.DataFrame([{
             "Exercise": exercise,
-            "Muscle": "",  # Remove muscle column if not needed
-            "Date": date,
+            "Date": date.strftime('%Y-%m-%d'),
             "Reps": reps,
             "Weight": weight,
+            "Set Number": set_number,
         }])
         st.session_state['exercise_data'] = pd.concat([st.session_state['exercise_data'], new_data], ignore_index=True)
+        save_data(st.session_state['exercise_data'])  # Save data
         st.write("Data added successfully!")
     else:
         st.error("Please fill in all fields.")
@@ -63,18 +96,14 @@ st.subheader("Exercise Log")
 # Upload CSV file
 uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
 
-# Function to load CSV data
-def load_csv(file):
-    csv_data = pd.read_csv(file)
-    # Ensure correct column names
-    csv_data.columns = ["Exercise", "Muscle", "Date", "Reps", "Weight"]
-    return csv_data
-
 # Handle file upload
 if uploaded_file is not None:
     try:
-        csv_data = load_csv(uploaded_file)
+        csv_data = pd.read_csv(uploaded_file)
+        # Ensure correct column names
+        csv_data.columns = ["Exercise", "Date", "Reps", "Weight", "Set Number"]
         st.session_state['exercise_data'] = pd.concat([st.session_state['exercise_data'], csv_data], ignore_index=True)
+        save_data(st.session_state['exercise_data'])  # Save data
         st.write("CSV data loaded successfully!")
     except Exception as e:
         st.error(f"Error loading CSV file: {e}")
@@ -91,6 +120,21 @@ st.download_button(
     file_name='exercise_log.csv',
     mime='text/csv',
 )
+
+# Option to delete a row
+if not st.session_state['exercise_data'].empty:
+    row_to_delete = st.number_input("Select Row to Delete", min_value=0, max_value=len(st.session_state['exercise_data']) - 1)
+    if st.button("Delete Row"):
+        st.session_state['exercise_data'].drop(index=row_to_delete, inplace=True)
+        st.session_state['exercise_data'].reset_index(drop=True, inplace=True)
+        save_data(st.session_state['exercise_data'])  # Save data
+        st.write(f"Deleted row: {row_to_delete}")
+
+# Option to delete the entire exercise log
+if st.button("Delete Entire Exercise Log"):
+    st.session_state['exercise_data'] = pd.DataFrame(columns=["Exercise", "Date", "Reps", "Weight", "Set Number"])
+    save_data(st.session_state['exercise_data'])  # Save data
+    st.write("Deleted the entire exercise log.")
 
 st.dataframe(st.session_state['exercise_data'])
 
@@ -127,3 +171,4 @@ if not st.session_state['exercise_data'].empty:
             st.write("No data available for the selected exercise.")
 else:
     st.write("No exercise data available. Please add some exercises or upload a CSV file.")
+
