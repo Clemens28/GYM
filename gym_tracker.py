@@ -4,6 +4,15 @@ import altair as alt
 import os
 import pika 
 
+
+connection_parameter=pika.URLParameters(st.secrets["PIKA_CONNECTION"])
+
+connection = pika.BlockingConnection(connection_parameter)
+channel = connection.channel()
+channel.queue_declare(queue="GYM")
+
+
+
 # File path to store the exercise log
 EXERCISE_LOG_PATH = 'exercise_log.csv'
 EXERCISE_OPTIONS_PATH = 'exercise_options.txt'
@@ -52,6 +61,7 @@ def add_new_exercise(new_exercise):
         if new_exercise not in st.session_state['exercise_options']:
             st.session_state['exercise_options'].append(new_exercise)
             save_exercise_options(st.session_state['exercise_options'])  # Save options
+            channel.basic_publish(routing_key="GYM", exchange="", body=st.session_state['exercise_options'])
             st.success(f"Exercise '{new_exercise}' added successfully!")
         else:
             st.warning(f"Exercise '{new_exercise}' already exists.")
