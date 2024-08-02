@@ -61,7 +61,7 @@ def add_new_exercise(new_exercise):
         if new_exercise not in st.session_state['exercise_options']:
             st.session_state['exercise_options'].append(new_exercise)
             save_exercise_options(st.session_state['exercise_options'])  # Save options
-            channel.basic_publish(routing_key="GYM", exchange="", body=st.session_state['exercise_options'])
+            channel.basic_publish(routing_key="GYM", exchange="", body="hello from streamlit")
             st.success(f"Exercise '{new_exercise}' added successfully!")
         else:
             st.warning(f"Exercise '{new_exercise}' already exists.")
