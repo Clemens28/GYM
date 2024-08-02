@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 import os
+import pika 
 
 # File path to store the exercise log
 EXERCISE_LOG_PATH = 'exercise_log.csv'
