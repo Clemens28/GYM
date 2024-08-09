@@ -12,7 +12,8 @@ connection_parameter=pika.URLParameters(st.secrets["PIKA_CONNECTION"])
 connection = pika.BlockingConnection(connection_parameter)
 channel = connection.channel()
 channel.queue_declare(queue="test")
-
+st.session_state["pika_channel"]=channel
+#channel.basic_publish(routing_key="test", exchange="", body="hello from streamlit")
 
 
 # File path to store the exercise log
@@ -63,7 +64,7 @@ def add_new_exercise(new_exercise):
         if new_exercise not in st.session_state['exercise_options']:
             st.session_state['exercise_options'].append(new_exercise)
             save_exercise_options(st.session_state['exercise_options'])  # Save options
-            channel.basic_publish(routing_key="test", exchange="", body="hello from streamlit")
+            st.session_state["pika_channel"].basic_publish(routing_key="test", exchange="", body="hello from streamlit")
             st.success(f"Exercise '{new_exercise}' added successfully!")
         else:
             st.warning(f"Exercise '{new_exercise}' already exists.")
