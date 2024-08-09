@@ -9,10 +9,10 @@ logging.basicConfig(level=logging.DEBUG)
 
 connection_parameter=pika.URLParameters(st.secrets["PIKA_CONNECTION"])
 
-connection = pika.BlockingConnection(connection_parameter)
-channel = connection.channel()
-channel.queue_declare(queue="test")
-st.session_state["pika_channel"]=channel
+#connection = pika.BlockingConnection(connection_parameter)
+#channel = connection.channel()
+#channel.queue_declare(queue="test")
+#st.session_state["pika_channel"]=channel
 #channel.basic_publish(routing_key="test", exchange="", body="hello from streamlit")
 
 
@@ -54,6 +54,12 @@ if 'exercise_data' not in st.session_state:
     st.session_state['exercise_data'] = load_data()
 if 'exercise_options' not in st.session_state:
     st.session_state['exercise_options'] = load_exercise_options()
+if 'pika_channel' not in st.session_state:
+    connection_parameter=pika.URLParameters(st.secrets["PIKA_CONNECTION"])
+    connection = pika.BlockingConnection(connection_parameter)
+    channel = connection.channel()
+    channel.queue_declare(queue="test")
+    st.session_state["pika_channel"]=channel
 
 # Title
 st.title("Gym Exercise Tracker")
