@@ -4,6 +4,7 @@ import altair as alt
 import os
 import pika 
 import logging
+from json import dumps
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -70,7 +71,6 @@ def add_new_exercise(new_exercise):
         if new_exercise not in st.session_state['exercise_options']:
             st.session_state['exercise_options'].append(new_exercise)
             save_exercise_options(st.session_state['exercise_options'])  # Save options
-            st.session_state["pika_channel"].basic_publish(routing_key="test", exchange="", body="hello from streamlit")
             st.success(f"Exercise '{new_exercise}' added successfully!")
         else:
             st.warning(f"Exercise '{new_exercise}' already exists.")
@@ -97,16 +97,19 @@ with st.form(key='exercise_form'):
 # Handle form submission
 if submit_button:
     if exercise and date and reps and weight and set_number:
-        new_data = pd.DataFrame([{
+        data_dict={
             "Exercise": exercise,
             "Date": date.strftime('%Y-%m-%d'),
             "Reps": reps,
             "Weight": weight,
             "Set Number": set_number,
-        }])
+        }
+        new_data = pd.DataFrame([data_dict])
         st.session_state['exercise_data'] = pd.concat([st.session_state['exercise_data'], new_data], ignore_index=True)
         save_data(st.session_state['exercise_data'])  # Save data
+        st.session_state["pika_channel"].basic_publish(routing_key="test", exchange="", body=dumps(data_dict))
         st.write("Data added successfully!")
+
     else:
         st.error("Please fill in all fields.")
 
