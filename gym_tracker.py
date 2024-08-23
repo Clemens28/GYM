@@ -59,7 +59,7 @@ if 'pika_channel' not in st.session_state:
     connection_parameter=pika.URLParameters(st.secrets["PIKA_CONNECTION"])
     connection = pika.BlockingConnection(connection_parameter)
     channel = connection.channel()
-    channel.queue_declare(queue="test")
+    channel.queue_declare(queue="GYM")
     st.session_state["pika_channel"]=channel
 
 # Title
@@ -107,7 +107,7 @@ if submit_button:
         new_data = pd.DataFrame([data_dict])
         st.session_state['exercise_data'] = pd.concat([st.session_state['exercise_data'], new_data], ignore_index=True)
         save_data(st.session_state['exercise_data'])  # Save data
-        st.session_state["pika_channel"].basic_publish(routing_key="test", exchange="", body=dumps(data_dict))
+        st.session_state["pika_channel"].basic_publish(routing_key="GYM", exchange="", body=dumps(data_dict))
         st.write("Data added successfully!")
 
     else:
