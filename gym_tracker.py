@@ -23,17 +23,14 @@ postgres_connection_string=st.secrets["POSTGRES_CONNECTION"]
 EXERCISE_LOG_PATH = 'exercise_log.csv'
 EXERCISE_OPTIONS_PATH = 'exercise_options.txt'
 
-# Function to load exercise data from CSV file
+# Function to load exercise data from postgres db
 def load_data():
-    if os.path.exists(EXERCISE_LOG_PATH):
-        return pd.read_csv(EXERCISE_LOG_PATH)
-    else:
-        return pd.DataFrame(columns=["Exercise", "Date", "Reps", "Weight", "Set Number"])
+    return pd.read_sql_table(table_name="exercises", con= st.session_state["postgres_connection"])
 
-# Function to save exercise data to CSV file
+# Function to save exercise data to postgres db
 def save_data(df):
     df.to_csv(EXERCISE_LOG_PATH, index=False)
-    df.to_sql(name="exercises", schema="data", con= st.session_state["postgres_connection"], index=False, if_exists="replace")
+    df.to_sql(name="exercises", con= st.session_state["postgres_connection"], index=False, if_exists="replace")
 
 # Function to load exercise options from file
 def load_exercise_options():
