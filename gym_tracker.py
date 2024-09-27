@@ -5,10 +5,12 @@ import os
 import pika 
 import logging
 from json import dumps
+from sqlalchemy import create_engine
 
 logging.basicConfig(level=logging.DEBUG)
 
 connection_parameter=pika.URLParameters(st.secrets["PIKA_CONNECTION"])
+postgres_connection_string=st.secrets["POSTGRES_CONNECTION"]
 
 #connection = pika.BlockingConnection(connection_parameter)
 #channel = connection.channel()
@@ -31,6 +33,7 @@ def load_data():
 # Function to save exercise data to CSV file
 def save_data(df):
     df.to_csv(EXERCISE_LOG_PATH, index=False)
+    df.to_sql(name="exercises", schema="data", con= st.session_state["postgres_connection"], index=False, if_exists="replace")
 
 # Function to load exercise options from file
 def load_exercise_options():
@@ -51,6 +54,8 @@ def save_exercise_options(options):
             file.write(f"{option}\n")
 
 # Initialize session state
+if 'postgres_connection' not in st.session_state:
+    st.session_state["postgres_connection"]=create_engine(postgres_connection_string)
 if 'exercise_data' not in st.session_state:
     st.session_state['exercise_data'] = load_data()
 if 'exercise_options' not in st.session_state:
