@@ -32,23 +32,19 @@ def save_data(df):
     df.to_csv(EXERCISE_LOG_PATH, index=False)
     df.to_sql(name="exercises", con= st.session_state["postgres_connection"], index=False, if_exists="replace")
 
-# Function to load exercise options from file
-def load_exercise_options():
-    if os.path.exists(EXERCISE_OPTIONS_PATH):
-        with open(EXERCISE_OPTIONS_PATH, 'r') as file:
-            return file.read().splitlines()
-    else:
-        return [
-            "Bench Press", "Incline Press Machine", "Bird Machine", "Triceps Cable heavy", "Triceps Machine",
-            "Shoulder Press Machine", "Lat Raise Machine", "Scholze Glas auskippen", "Shrug Machine",
-            "Deadlift", "Cable Row Machine", "T Bar", "SZ Curls", "Biceps Machine"
-        ]
+# Function to load exercise options from db
 
-# Function to save exercise options to file
+def load_exercise_options():
+    df= pd.read_sql_table(table_name="exercise_options", con= st.session_state["postgres_connection"])
+    return df['OPTIONS'].tolist()
+
+# Function to save exercise options to db
+
 def save_exercise_options(options):
-    with open(EXERCISE_OPTIONS_PATH, 'w') as file:
-        for option in options:
-            file.write(f"{option}\n")
+    df=pd.DataFrame({'OPTIONS': options})
+    df.to_csv(EXERCISE_OPTIONS_PATH, index=False)
+    df.to_sql(name="exercise_options", con= st.session_state["postgres_connection"], index=False, if_exists="replace")
+
 
 # Initialize session state
 if 'postgres_connection' not in st.session_state:
