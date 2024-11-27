@@ -1,3 +1,4 @@
 pika
 sqlalchemy
 psycopg2-binary
+streamlit-authenticator
