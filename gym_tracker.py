@@ -53,7 +53,7 @@ if st.session_state["authentication_status"]:
     # Function to load exercise options from db
 
     def load_exercise_options():
-        df= pd.read_sql_table(table_name="exercise_options", con= st.session_state["postgres_connection"])
+        df= pd.read_sql(sql=f"SELECT * FROM exercise_options WHERE username='{st.session_state['name']}'", con= st.session_state["postgres_connection"])
         return df['OPTIONS'].tolist()
 
     # Function to save exercise options to db
@@ -67,10 +67,10 @@ if st.session_state["authentication_status"]:
     # Initialize session state
     if 'postgres_connection' not in st.session_state:
         st.session_state["postgres_connection"]=create_engine(postgres_connection_string)
-    if 'exercise_data' not in st.session_state:
-        st.session_state['exercise_data'] = load_data()
-    if 'exercise_options' not in st.session_state:
-        st.session_state['exercise_options'] = load_exercise_options()
+    #if 'exercise_data' not in st.session_state:
+    st.session_state['exercise_data'] = load_data()
+    #if 'exercise_options' not in st.session_state:
+    st.session_state['exercise_options'] = load_exercise_options()
     if 'pika_channel' not in st.session_state:
         connection_parameter=pika.URLParameters(st.secrets["PIKA_CONNECTION"])
         connection = pika.BlockingConnection(connection_parameter)
