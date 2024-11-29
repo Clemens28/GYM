@@ -43,7 +43,7 @@ if st.session_state["authentication_status"]:
 
     # Function to load exercise data from postgres db
     def load_data():
-        return pd.read_sql_table(table_name="exercises", con= st.session_state["postgres_connection"])
+        return pd.read_sql(sql=f"SELECT * FROM exercises WHERE username='{st.session_state['name']}'", con= st.session_state["postgres_connection"])
 
     # Function to save exercise data to postgres db
     def save_data(df):
