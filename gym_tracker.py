@@ -26,7 +26,7 @@ authenticator.login(location='main', key='Login')
 
 if st.session_state["authentication_status"]:
     authenticator.logout('Logout', 'main')
-    st.write(f'Welcome *{st.session_state["name"]}*')
+    st.write(f'Welcome *{st.session_state["username"]}*')
     connection_parameter=pika.URLParameters(st.secrets["PIKA_CONNECTION"])
     postgres_connection_string=st.secrets["POSTGRES_CONNECTION"]
 
@@ -43,25 +43,23 @@ if st.session_state["authentication_status"]:
 
     # Function to load exercise data from postgres db
     def load_data():
-        return pd.read_sql(sql=f"SELECT * FROM exercises WHERE username='{st.session_state['name']}'", con= st.session_state["postgres_connection"])
+        return pd.read_sql(sql=f"SELECT * FROM exercises WHERE username='{st.session_state['username']}'", con= st.session_state["postgres_connection"])
 
     # Function to save exercise data to postgres db
     def save_data(df):
-        df.to_csv(EXERCISE_LOG_PATH, index=False)
-        df.to_sql(name="exercises", con= st.session_state["postgres_connection"], index=False, if_exists="replace")
+        df.to_sql(name="exercises", con= st.session_state["postgres_connection"], index=False, if_exists="append")
 
     # Function to load exercise options from db
 
     def load_exercise_options():
-        df= pd.read_sql(sql=f"SELECT * FROM exercise_options WHERE username='{st.session_state['name']}'", con= st.session_state["postgres_connection"])
+        df= pd.read_sql(sql=f"SELECT * FROM exercise_options WHERE username='{st.session_state['username']}'", con= st.session_state["postgres_connection"])
         return df['OPTIONS'].tolist()
 
     # Function to save exercise options to db
 
-    def save_exercise_options(options):
-        df=pd.DataFrame({'OPTIONS': options})
-        df.to_csv(EXERCISE_OPTIONS_PATH, index=False)
-        df.to_sql(name="exercise_options", con= st.session_state["postgres_connection"], index=False, if_exists="replace")
+    def save_exercise_option(option):
+        df=pd.DataFrame({'OPTIONS': [option],'username': [st.session_state['username']]})
+        df.to_sql(name="exercise_options", con= st.session_state["postgres_connection"], index=False, if_exists="append")
 
 
     # Initialize session state
@@ -86,7 +84,7 @@ if st.session_state["authentication_status"]:
         if new_exercise:
             if new_exercise not in st.session_state['exercise_options']:
                 st.session_state['exercise_options'].append(new_exercise)
-                save_exercise_options(st.session_state['exercise_options'])  # Save options
+                save_exercise_option(new_exercise)  # Save options
                 st.success(f"Exercise '{new_exercise}' added successfully!")
             else:
                 st.warning(f"Exercise '{new_exercise}' already exists.")
@@ -119,10 +117,11 @@ if st.session_state["authentication_status"]:
                 "Reps": reps,
                 "Weight": weight,
                 "Set Number": set_number,
+                "username": st.session_state['username']
             }
             new_data = pd.DataFrame([data_dict])
             st.session_state['exercise_data'] = pd.concat([st.session_state['exercise_data'], new_data], ignore_index=True)
-            save_data(st.session_state['exercise_data'])  # Save data
+            save_data(new_data)  # Save data
             st.session_state["pika_channel"].basic_publish(routing_key="GYM", exchange="", body=dumps(data_dict))
             st.write("Data added successfully!")
 
